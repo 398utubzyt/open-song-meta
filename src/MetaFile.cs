@@ -40,8 +40,11 @@ namespace Osm
         public readonly string? Artist => _artist;
         public readonly string? Album => _album;
 
+        public readonly bool HasTempo => _tempos.Length > 0;
         public readonly TimedTrack<Tempo>.ReadOnly Tempos => _tempos.AsReadOnly();
+        public readonly bool HasTimeSignature => _tsigs.Length > 0;
         public readonly TimedTrack<TimeSignature>.ReadOnly TimeSignatures => _tsigs.AsReadOnly();
+        public readonly bool HasKeySignature => _ksigs.Length > 0;
         public readonly TimedTrack<KeySignature>.ReadOnly KeySignatures => _ksigs.AsReadOnly();
 
         public readonly Tempo InitialTempo => _tempos.FirstValue;
