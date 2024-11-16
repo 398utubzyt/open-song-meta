@@ -63,10 +63,8 @@ namespace Osm.Importers
                 Stream xmlInfo = e.Open();
                 using (xmlInfo)
                 {
-                    XmlReader xr = XmlReader.Create(xmlInfo, _xmlSettings, _xmlContext);
-                    xr.Read();
-
-                    using (xr)
+                    XmlReader xr;
+                    using (xr = XmlReader.Create(xmlInfo, _xmlSettings, _xmlContext))
                     {
                         if (!xr.ReadToFollowing("MetaInformation"))
                             return false;
@@ -109,12 +107,10 @@ namespace Osm.Importers
                     return false;
                 }
 
-                xmlInfo = e.Open();
-                using (xmlInfo)
+                using (xmlInfo = e.Open())
                 {
-                    XmlReader xr = XmlReader.Create(xmlInfo, _xmlSettings, _xmlContext);
-
-                    using (xr)
+                    XmlReader xr;
+                    using (xr = XmlReader.Create(xmlInfo, _xmlSettings, _xmlContext))
                     {
                         if (!xr.ReadToFollowing("Song"))
                             return false;
