@@ -1,0 +1,7 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<Import Project="osm.build.props" />
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<OutputPath>bin/$(Configuration)/exe</OutputPath>
+	</PropertyGroup>
+</Project>

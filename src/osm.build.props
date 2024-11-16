@@ -1,0 +1,15 @@
+<Project>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<RootNamespace>Osm</RootNamespace>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<AssemblyName>opensongmeta</AssemblyName>
+		<Title>Open Song Meta</Title>
+		<Description>Open Song Meta</Description>
+		<Authors>398utubzyt</Authors>
+		<Version>0.1.0.0</Version>
+	</PropertyGroup>
+</Project>
