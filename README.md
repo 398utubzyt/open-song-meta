@@ -45,5 +45,6 @@ Below is a checklist of everything that needs to get done before the format is f
   - [ ] Ableton
   - [ ] REAPER
 - [ ] Write documentation
+- [ ] BPM Easing
 
 This list will likely change as the scope of the project changes.
