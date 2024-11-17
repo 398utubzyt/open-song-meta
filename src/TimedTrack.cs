@@ -13,7 +13,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Osm
+namespace Opsm
 {
     public sealed class TimedTrack<T> : IEnumerable<TimedValue<T>>, IEnumerable<T>
     {

@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Osm
+namespace Opsm
 {
     public enum WesternMode : byte
     {

@@ -10,7 +10,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Osm
+namespace Opsm
 {
     public enum WesternNote : byte
     {

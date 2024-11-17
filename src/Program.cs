@@ -7,14 +7,14 @@
 
 #if !NO_MAIN
 
-using Osm.Importers;
-using Osm.IO;
+using Opsm.Importers;
+using Opsm.IO;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Osm
+namespace Opsm
 {
     internal static class Program
     {

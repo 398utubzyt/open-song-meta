@@ -5,14 +5,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Osm.IO;
+using Opsm.IO;
 
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Xml;
 
-namespace Osm.Importers
+namespace Opsm.Importers
 {
     public sealed class StudioOneImporter : IMetaImporter
     {

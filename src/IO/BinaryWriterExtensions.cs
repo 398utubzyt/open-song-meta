@@ -9,7 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Osm.IO
+namespace Opsm.IO
 {
     public static class BinaryIOExtensions
     {

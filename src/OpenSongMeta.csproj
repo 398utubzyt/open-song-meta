@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	<Import Project="osm.build.props" />
+	<Import Project="opsm.build.props" />
 	<PropertyGroup>
 		<OutputPath>bin/$(Configuration)/lib</OutputPath>
 		<DefineConstants>NO_MAIN</DefineConstants>
