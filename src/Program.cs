@@ -29,6 +29,15 @@ namespace Osm
             { ConsoleKey.S, new('S', "tudio One", typeof(StudioOneImporter)) },
         };
 
+        private static readonly Dictionary<char, ConsoleKey> _charToCk;
+
+        static Program()
+        {
+            _charToCk = new(_importerData.Count);
+            foreach (var kv in _importerData)
+                _charToCk[char.ToUpperInvariant(kv.Value.Char)] = kv.Key;
+        }
+
         public static void Main(string[] argsArray)
         {
             Dictionary<string, List<string>> args = [];
@@ -45,8 +54,32 @@ namespace Osm
                 }
             }
 
+            bool verbose = args.ContainsKey("v");
+
+            ConsoleKey mode;
+            if (args.TryGetValue("m", out List<string>? list))
+            {
+                if (list.Count > 1)
+                {
+                    Console.WriteLine("Too many modes");
+                    return;
+                }
+
+                if (list[0].Length != 1)
+                {
+                    Console.WriteLine("Mode code must be 1 character");
+                    return;
+                }
+
+                if (!_charToCk.TryGetValue(char.ToUpperInvariant(list[0][0]), out mode))
+                {
+                    mode = ConsoleKey.None;
+                }
+            } else
+                mode = ConsoleKey.None;
+            
             string? path;
-            if (args.TryGetValue("i", out List<string>? list))
+            if (args.TryGetValue("i", out list))
             {
                 if (list.Count > 1)
                 {
@@ -76,41 +109,47 @@ namespace Osm
 
             Type? importerType = null;
             bool keepLooping = true;
-            while (true)
+            if (mode != ConsoleKey.None && _importerData.TryGetValue(mode, out var value))
             {
-                Console.WriteLine("Select import mode:");
-                Console.WriteLine("[N]one");
-                foreach (ImporterData data in _importerData.Values)
+                importerType = value.Importer;
+            } else
+            {
+                while (true)
                 {
-                    Console.Write('[');
-                    Console.Write(data.Char);
-                    Console.Write(']');
-                    Console.WriteLine(data.Name);
+                    Console.WriteLine("Select import mode:");
+                    Console.WriteLine("[N]one");
+                    foreach (ImporterData data in _importerData.Values)
+                    {
+                        Console.Write('[');
+                        Console.Write(data.Char);
+                        Console.Write(']');
+                        Console.WriteLine(data.Name);
+                    }
+
+                    Console.Write("> ");
+                    ConsoleKeyInfo key;
+                    do
+                    {
+                        key = Console.ReadKey(true);
+                    } while (char.IsWhiteSpace(key.KeyChar));
+                    Console.WriteLine(key.KeyChar);
+
+                    if (_importerData.TryGetValue(key.Key, out value))
+                    {
+                        importerType = value.Importer;
+                        keepLooping = false;
+                    } else if (key.Key == ConsoleKey.N)
+                    {
+                        keepLooping = false;
+                    }
+
+                    if (keepLooping)
+                    {
+                        Console.WriteLine("That is not a valid mode.");
+                        Console.WriteLine();
+                    } else
+                        break;
                 }
-
-                Console.Write("> ");
-                ConsoleKeyInfo key;
-                do
-                {
-                    key = Console.ReadKey(true);
-                } while (char.IsWhiteSpace(key.KeyChar));
-                Console.WriteLine(key.KeyChar);
-
-                if (_importerData.TryGetValue(key.Key, out var value))
-                {
-                    importerType = value.Importer;
-                    keepLooping = false;
-                } else if (key.Key == ConsoleKey.N)
-                {
-                    keepLooping = false;
-                }
-
-                if (keepLooping)
-                {
-                    Console.WriteLine("That is not a valid mode.");
-                    Console.WriteLine();
-                } else
-                    break;
             }
 
             using IMetaImporter? importer = importerType != null ? (IMetaImporter?)Activator.CreateInstance(importerType) : null;
@@ -149,40 +188,43 @@ namespace Osm
             if (result)
             {
                 Console.WriteLine("Success!");
-                Console.WriteLine();
 
-                Console.Write("Name: ");
-                Console.WriteLine(file.Name);
-
-                if (file.Title != null)
+                if (verbose)
                 {
-                    Console.Write("Title: ");
-                    Console.WriteLine(file.Title);
+                    Console.WriteLine();
+                    Console.Write("Name: ");
+                    Console.WriteLine(file.Name);
+
+                    if (file.Title != null)
+                    {
+                        Console.Write("Title: ");
+                        Console.WriteLine(file.Title);
+                    }
+
+                    if (file.Artist != null)
+                    {
+                        Console.Write("Artist(s): ");
+                        Console.WriteLine(file.Artist);
+                    }
+
+                    if (file.Album != null)
+                    {
+                        Console.Write("Album: ");
+                        Console.WriteLine(file.Album);
+                    }
+
+                    Console.Write("Tempos: [");
+                    Console.Write(string.Join<TimedValue<Tempo>>(", ", file.Tempos));
+                    Console.WriteLine(']');
+
+                    Console.Write("Time Signatures: [");
+                    Console.Write(string.Join<TimedValue<TimeSignature>>(", ", file.TimeSignatures));
+                    Console.WriteLine(']');
+
+                    Console.Write("Key Signatures: [");
+                    Console.Write(string.Join<TimedValue<KeySignature>>(", ", file.KeySignatures));
+                    Console.WriteLine(']');
                 }
-
-                if (file.Artist != null)
-                {
-                    Console.Write("Artist(s): ");
-                    Console.WriteLine(file.Artist);
-                }
-
-                if (file.Album != null)
-                {
-                    Console.Write("Album: ");
-                    Console.WriteLine(file.Album);
-                }
-                
-                Console.Write("Tempos: [");
-                Console.Write(string.Join<TimedValue<Tempo>>(", ", file.Tempos));
-                Console.WriteLine(']');
-
-                Console.Write("Time Signatures: [");
-                Console.Write(string.Join<TimedValue<TimeSignature>>(", ", file.TimeSignatures));
-                Console.WriteLine(']');
-
-                Console.Write("Key Signatures: [");
-                Console.Write(string.Join<TimedValue<KeySignature>>(", ", file.KeySignatures));
-                Console.WriteLine(']');
             } else
             {
                 Console.WriteLine("Failed.");
