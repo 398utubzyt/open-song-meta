@@ -9,17 +9,25 @@ using Opsm.Importers;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 namespace Opsm.IO
 {
-    public sealed class MetaReader : IDisposable
+    public sealed partial class MetaReader : IDisposable
     {
         public const int CurrentVersion = 1;
         public const int Magic = 0x4D53504F;
 
         private readonly BinaryReader _reader;
         private readonly bool _keepAlive;
+
+        private static readonly Dictionary<int, Func<MetaReader, MetaFile>> _mfVer = [];
+
+        static MetaReader()
+        {
+            _mfVer.Add(1, V1.ReadMetaFile);
+        }
 
         public BinaryReader Reader => _reader;
         public Stream Stream => _reader.BaseStream;
@@ -34,6 +42,18 @@ namespace Opsm.IO
         {
             _reader = reader;
             _keepAlive = keepAlive;
+        }
+
+        private static void ThrowIfNotEqual(int a, int b)
+        {
+            if (a != b)
+                throw new IOException();
+        }
+
+        private static void ThrowIfFalse([DoesNotReturnIf(false)] bool a)
+        {
+            if (!a)
+                throw new IOException();
         }
 
         public Tempo ReadTempo()
@@ -64,12 +84,6 @@ namespace Opsm.IO
         public TimedValue<KeySignature> ReadTimedKeySignature()
         {
             return new(_reader.ReadDouble(), ReadKeySignature());
-        }
-
-        private static void ThrowIfNotEqual(int a, int b)
-        {
-            if (a != b)
-                throw new IOException();
         }
 
         public TimedTrack<Tempo> ReadTempoTrack()
@@ -108,66 +122,13 @@ namespace Opsm.IO
             return result;
         }
 
-        private static void ThrowIfLessThan(int a, int b)
-        {
-            if (a < b)
-                throw new IOException();
-        }
-
         public MetaFile ReadMetaFile()
         {
             ThrowIfNotEqual(_reader.ReadInt32(), Magic);
 
-            int version = _reader.ReadInt32();
-            ThrowIfLessThan(version, 1);
+            ThrowIfFalse(_mfVer.TryGetValue(_reader.ReadInt32(), out var ver));
 
-            // Temporary since there's only one version.
-            ThrowIfNotEqual(version, CurrentVersion);
-
-            string name = _reader.ReadString();
-
-            string? title = null;
-            string? artist = null;
-            string? album = null;
-            TimedTrack<Tempo> tempos = null!;
-            TimedTrack<TimeSignature> timeSignatures = null!;
-            TimedTrack<KeySignature> keySignatures = null!;
-            Dictionary<string, ExtensionBlock> blocks = [];
-
-            while (_reader.TryReadBlockId(out BlockId id))
-            {
-                switch (id)
-                {
-                    case BlockId.Title:
-                        title = _reader.ReadString();
-                        break;
-                    case BlockId.Artist:
-                        artist = _reader.ReadString();
-                        break;
-                    case BlockId.Album:
-                        album = _reader.ReadString();
-                        break;
-                    case BlockId.Tempo:
-                        tempos = ReadTempoTrack();
-                        break;
-                    case BlockId.TimeSignatures:
-                        timeSignatures = ReadTimeSignatureTrack();
-                        break;
-                    case BlockId.KeySignatures:
-                        keySignatures = ReadKeySignatureTrack();
-                        break;
-                    case BlockId.Extension:
-                        string bname = _reader.ReadString();
-                        blocks.Add(bname, new(bname, _reader.ReadBytes(_reader.Read7BitEncodedInt())));
-                        break;
-                }
-            }
-
-            tempos ??= new(0);
-            timeSignatures ??= new(0);
-            keySignatures ??= new(0);
-
-            return new(version, name, title, artist, album, tempos, timeSignatures, keySignatures, blocks);
+            return ver(this);
         }
 
         public bool ImportMetaFile(IMetaImporter importer, out MetaFile meta)
