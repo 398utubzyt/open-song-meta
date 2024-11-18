@@ -13,8 +13,10 @@ namespace Opsm.IO
     {
         private static class V1
         {
-            public static MetaFile ReadMetaFile(MetaReader reader)
+            public static MetaFile ReadMetaFile(MetaReader reader, int version)
             {
+                ThrowIfNotEqual(version, 1);
+
                 string name = reader._reader.ReadString();
 
                 string? title = null;

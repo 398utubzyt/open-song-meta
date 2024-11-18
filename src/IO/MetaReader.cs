@@ -22,12 +22,9 @@ namespace Opsm.IO
         private readonly BinaryReader _reader;
         private readonly bool _keepAlive;
 
-        private static readonly Dictionary<int, Func<MetaReader, MetaFile>> _mfVer = [];
-
-        static MetaReader()
-        {
-            _mfVer.Add(1, V1.ReadMetaFile);
-        }
+        private static readonly Func<MetaReader, int, MetaFile>[] _mfVer = [
+                V1.ReadMetaFile,
+            ];
 
         public BinaryReader Reader => _reader;
         public Stream Stream => _reader.BaseStream;
@@ -50,9 +47,15 @@ namespace Opsm.IO
                 throw new IOException();
         }
 
-        private static void ThrowIfFalse([DoesNotReturnIf(false)] bool a)
+        private static void ThrowIfLessThan(int a, int b)
         {
-            if (!a)
+            if (a < b)
+                throw new IOException();
+        }
+
+        private static void ThrowIfGreaterThanOrEqualTo(int a, int b)
+        {
+            if (a >= b)
                 throw new IOException();
         }
 
@@ -126,9 +129,11 @@ namespace Opsm.IO
         {
             ThrowIfNotEqual(_reader.ReadInt32(), Magic);
 
-            ThrowIfFalse(_mfVer.TryGetValue(_reader.ReadInt32(), out var ver));
+            int version = _reader.ReadInt32();
+            ThrowIfLessThan(version, 1);
+            ThrowIfGreaterThanOrEqualTo(version, _mfVer.Length);
 
-            return ver(this);
+            return _mfVer[version](this, version);
         }
 
         public bool ImportMetaFile(IMetaImporter importer, out MetaFile meta)
