@@ -192,7 +192,7 @@ namespace Opsm.Importers
         public bool Import(out MetaFile meta)
         {
             bool result = _populated;
-            meta = result ? new(MetaWriter.CurrentVersion, _name, _title, _artist, _album, _tempos ?? [], _timeSignatures ?? [], _keySignatures ?? []) : default;
+            meta = result ? new(MetaWriter.CurrentVersion, _name, _title, _artist, _album, _tempos ?? [], _timeSignatures ?? [], _keySignatures ?? [], []) : default;
             return result;
         }
     }

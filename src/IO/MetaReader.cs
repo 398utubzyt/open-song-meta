@@ -8,6 +8,7 @@
 using Opsm.Importers;
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Opsm.IO
@@ -15,6 +16,7 @@ namespace Opsm.IO
     public sealed class MetaReader : IDisposable
     {
         public const int CurrentVersion = 1;
+        public const int Magic = 0x4D53504F;
 
         private readonly BinaryReader _reader;
         private readonly bool _keepAlive;
@@ -72,7 +74,7 @@ namespace Opsm.IO
 
         public TimedTrack<Tempo> ReadTempoTrack()
         {
-            TimedTrack<Tempo> result = new(_reader.ReadUInt16());
+            TimedTrack<Tempo> result = new(_reader.ReadInt16());
 
             int i;
             for (i = 0; i < result.Length; ++i)
@@ -84,7 +86,7 @@ namespace Opsm.IO
 
         public TimedTrack<TimeSignature> ReadTimeSignatureTrack()
         {
-            TimedTrack<TimeSignature> result = new(_reader.ReadUInt16());
+            TimedTrack<TimeSignature> result = new(_reader.ReadInt16());
 
             int i;
             for (i = 0; i < result.Length; ++i)
@@ -96,7 +98,7 @@ namespace Opsm.IO
 
         public TimedTrack<KeySignature> ReadKeySignatureTrack()
         {
-            TimedTrack<KeySignature> result = new(_reader.ReadUInt16());
+            TimedTrack<KeySignature> result = new(_reader.ReadInt16());
 
             int i;
             for (i = 0; i < result.Length; ++i)
@@ -114,6 +116,8 @@ namespace Opsm.IO
 
         public MetaFile ReadMetaFile()
         {
+            ThrowIfNotEqual(_reader.ReadInt32(), Magic);
+
             int version = _reader.ReadInt32();
             ThrowIfLessThan(version, 1);
 
@@ -121,14 +125,49 @@ namespace Opsm.IO
             ThrowIfNotEqual(version, CurrentVersion);
 
             string name = _reader.ReadString();
-            string? title = _reader.ReadStringOptional();
-            string? artist = _reader.ReadStringOptional();
-            string? album = _reader.ReadStringOptional();
-            TimedTrack<Tempo> tempos = ReadTempoTrack();
-            TimedTrack<TimeSignature> timeSignatures = ReadTimeSignatureTrack();
-            TimedTrack<KeySignature> keySignatures = ReadKeySignatureTrack();
 
-            return new(version, name, title, artist, album, tempos, timeSignatures, keySignatures);
+            string? title = null;
+            string? artist = null;
+            string? album = null;
+            TimedTrack<Tempo> tempos = null!;
+            TimedTrack<TimeSignature> timeSignatures = null!;
+            TimedTrack<KeySignature> keySignatures = null!;
+            Dictionary<string, ExtensionBlock> blocks = [];
+
+            while (_reader.TryReadBlockId(out BlockId id))
+            {
+                switch (id)
+                {
+                    case BlockId.Title:
+                        title = _reader.ReadString();
+                        break;
+                    case BlockId.Artist:
+                        artist = _reader.ReadString();
+                        break;
+                    case BlockId.Album:
+                        album = _reader.ReadString();
+                        break;
+                    case BlockId.Tempo:
+                        tempos = ReadTempoTrack();
+                        break;
+                    case BlockId.TimeSignatures:
+                        timeSignatures = ReadTimeSignatureTrack();
+                        break;
+                    case BlockId.KeySignatures:
+                        keySignatures = ReadKeySignatureTrack();
+                        break;
+                    case BlockId.Extension:
+                        string bname = _reader.ReadString();
+                        blocks.Add(bname, new(bname, _reader.ReadBytes(_reader.Read7BitEncodedInt())));
+                        break;
+                }
+            }
+
+            tempos ??= new(0);
+            timeSignatures ??= new(0);
+            keySignatures ??= new(0);
+
+            return new(version, name, title, artist, album, tempos, timeSignatures, keySignatures, blocks);
         }
 
         public bool ImportMetaFile(IMetaImporter importer, out MetaFile meta)
@@ -143,7 +182,9 @@ namespace Opsm.IO
             return result;
         }
 
+#pragma warning disable IDE0060 // Remove unused parameter
         private void Free(bool manual)
+#pragma warning restore IDE0060 // Remove unused parameter
         {
             if (!_keepAlive)
                 _reader.Close();

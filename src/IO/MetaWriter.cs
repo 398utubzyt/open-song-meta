@@ -5,17 +5,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Opsm.Importers;
-
 using System;
 using System.IO;
-using System.Runtime.CompilerServices;
 
 namespace Opsm.IO
 {
     public sealed class MetaWriter : IDisposable
     {
         public const int CurrentVersion = 1;
+        public const int Magic = 0x4D53504F;
+        public const int Alignment = 16;
 
         private readonly BinaryWriter _writer;
         private readonly bool _keepAlive;
@@ -93,14 +92,45 @@ namespace Opsm.IO
 
         public void Write(in MetaFile meta)
         {
+            _writer.Write(Magic);
             _writer.Write(CurrentVersion);
+
             _writer.Write(meta.Name);
-            _writer.WriteOptional(meta.Title);
-            _writer.WriteOptional(meta.Artist);
-            _writer.WriteOptional(meta.Album);
-            Write(meta.Tempos);
-            Write(meta.TimeSignatures);
-            Write(meta.KeySignatures);
+
+            _writer.WriteAlignDummy(Alignment);
+            
+            _writer.WriteOptional(BlockId.Title, meta.Title);
+            _writer.WriteAlignDummy(Alignment);
+            _writer.WriteOptional(BlockId.Artist, meta.Artist);
+            _writer.WriteAlignDummy(Alignment);
+            _writer.WriteOptional(BlockId.Album, meta.Album);
+            _writer.WriteAlignDummy(Alignment);
+
+            if (meta.HasTempo)
+            {
+                _writer.Write(BlockId.Tempo);
+                Write(meta.Tempos);
+                _writer.WriteAlignDummy(Alignment);
+            }
+
+            if (meta.HasTimeSignature)
+            {
+                _writer.Write(BlockId.TimeSignatures);
+                Write(meta.TimeSignatures);
+                _writer.WriteAlignDummy(Alignment);
+            }
+
+            if (meta.HasKeySignature)
+            {
+                _writer.Write(BlockId.KeySignatures);
+                Write(meta.KeySignatures);
+                _writer.WriteAlignDummy(Alignment);
+            }
+
+            // Signifies the end of the format.
+            _writer.Write(BlockId.None);
+            if (_writer.WriteAlignDummy(Alignment))
+                _writer.Write(BlockId.Dummy);
         }
 
 #pragma warning disable IDE0060 // Remove unused parameter

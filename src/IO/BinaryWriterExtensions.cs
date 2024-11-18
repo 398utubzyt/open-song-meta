@@ -8,27 +8,50 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Opsm.IO
 {
     public static class BinaryIOExtensions
     {
-        public static void WriteOptional(this BinaryWriter self, string? str)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Write(this BinaryWriter self, BlockId id)
         {
-            bool isValid = str != null;
-            self.Write(isValid ? (byte)1 : (byte)0);
-            if (isValid)
+            self.Write((byte)id);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool WriteAlignDummy(this BinaryWriter self, int alignment)
+        {
+            long alignedOff = alignment - (self.BaseStream.Position % alignment);
+            if (alignedOff == alignment)
+                return false;
+
+            while (--alignedOff > 0)
             {
-                self.Write((byte)1);
+                Write(self, BlockId.Dummy);
+            }
+
+            return true;
+        }
+        public static void WriteOptional(this BinaryWriter self, BlockId id, string? str)
+        {
+            if (str != null)
+            {
+                Write(self, id);
                 self.Write(str!);
-            } else
-            {
-                self.Write((byte)0);
             }
         }
-        public static string? ReadStringOptional(this BinaryReader self)
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static BlockId ReadBlockId(this BinaryReader self)
         {
-            return self.ReadByte() == 0 ? null : self.ReadString();
+            return (BlockId)self.ReadByte();
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryReadBlockId(this BinaryReader self, out BlockId id)
+        {
+            id = ReadBlockId(self);
+            return id != BlockId.None && id != BlockId.Reserved;
         }
     }
 }

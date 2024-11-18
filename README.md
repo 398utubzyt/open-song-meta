@@ -37,8 +37,8 @@ Just ask the artist to send their project as an OPSM file—the rest is easy!
 Below is a checklist of everything that needs to get done before the format is finalized:
 
 - [ ] Streamlined support for both old and current versions
-- [ ] Switch to a modular format, allowing data to be written "out of order"
-  - [ ] Add support for custom data "modules," making this an extensible format
+- [x] Switch to a modular format, allowing data to be written "out of order"
+  - [x] Add support for custom data "modules," making this an extensible format
 - [ ] Less reliance on try-catch and exceptions (catch errors before-hand)
 - [ ] Importers for other DAWs
   - [ ] FL Studio

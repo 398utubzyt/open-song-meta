@@ -82,16 +82,16 @@ namespace Opsm
         public Span<TimedValue<T>> AsSpan() => _track.AsSpan();
         public ReadOnly AsReadOnly() => new(this);
 
-        private static void ThrowIfOverflow(int count, int amount)
+        private static void ThrowIfOverflow(int count, int amount, int length)
         {
             amount += count;
-            if (count < amount)
+            if (length < amount)
                 throw new InvalidOperationException();
         }
 
         public void Append(double time, T value)
         {
-            ThrowIfOverflow(_count, 1);
+            ThrowIfOverflow(_count, 1, _track.Length);
 #if DEBUG
             if (_count > 0)
             {
@@ -103,7 +103,7 @@ namespace Opsm
 
         public void Append(TimedValue<T> value)
         {
-            ThrowIfOverflow(_count, 1);
+            ThrowIfOverflow(_count, 1, _track.Length);
 #if DEBUG
             if (_count > 0)
             {
@@ -115,7 +115,7 @@ namespace Opsm
 
         public void Append(IEnumerable<TimedValue<T>> values)
         {
-            ThrowIfOverflow(_count, values.Count());
+            ThrowIfOverflow(_count, values.Count(), _track.Length);
             ref TimedValue<T> r = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_track), _count);
             foreach (TimedValue<T> value in values)
             {
@@ -133,7 +133,7 @@ namespace Opsm
 
         public void Append(ICollection<TimedValue<T>> values)
         {
-            ThrowIfOverflow(_count, values.Count);
+            ThrowIfOverflow(_count, values.Count, _track.Length);
             values.CopyTo(_track, _count);
             _count += values.Count;
 #if DEBUG
